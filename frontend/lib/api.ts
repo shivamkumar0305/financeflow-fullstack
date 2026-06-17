@@ -15,54 +15,69 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   })
 
   if (response.status === 401) {
-    // Handle unauthorized (maybe redirect to login or refresh token)
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token')
-      // window.location.href = '/login'
     }
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || errorData.message || `Error ${response.status}: ${response.statusText}`);
   }
 
   return response
 }
 
 export async function login(email: string, password: string) {
-  const response = await fetch(`${API_URL}/api/auth/login/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
+  try {
+    const response = await fetch(`${API_URL}/api/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
 
-  const data = await response.json()
+    const data = await response.json()
 
-  if (response.ok) {
-    localStorage.setItem('access_token', data.access)
-    localStorage.setItem('refresh_token', data.refresh)
-    return { success: true, data }
-  } else {
-    return { success: false, error: data.detail || 'Login failed' }
+    if (response.ok) {
+      localStorage.setItem('access_token', data.access)
+      localStorage.setItem('refresh_token', data.refresh)
+      return { success: true, data }
+    } else {
+      return { success: false, error: data.detail || 'Login failed' }
+    }
+  } catch (err) {
+    return { success: false, error: 'Network error' }
   }
 }
 
 export async function signup(email: string, password: string, fullName: string) {
-  const response = await fetch(`${API_URL}/api/users/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, full_name: fullName }),
-  })
+  try {
+    const response = await fetch(`${API_URL}/api/users/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name: fullName }),
+    })
 
-  const data = await response.json()
+    const data = await response.json()
 
-  if (response.ok) {
-    return { success: true, data }
-  } else {
-    return { success: false, error: data.email?.[0] || data.detail || 'Signup failed' }
+    if (response.ok) {
+      return { success: true, data }
+    } else {
+      return { success: false, error: data.email?.[0] || data.detail || 'Signup failed' }
+    }
+  } catch (err) {
+    return { success: false, error: 'Network error' }
   }
 }
 
 export async function getTransactions() {
-  const response = await apiFetch('/api/finance/records/')
-  if (!response.ok) return []
-  return response.json()
+  try {
+    const response = await apiFetch('/api/finance/records/')
+    return response.json()
+  } catch (err) {
+    console.error('getTransactions error:', err)
+    return []
+  }
 }
 
 export async function createTransaction(data: any) {
@@ -74,21 +89,33 @@ export async function createTransaction(data: any) {
 }
 
 export async function getDashboardSummary() {
-  const response = await apiFetch('/api/dashboard/summary/')
-  if (!response.ok) return null
-  return response.json()
+  try {
+    const response = await apiFetch('/api/dashboard/summary/')
+    return response.json()
+  } catch (err) {
+    console.error('getDashboardSummary error:', err)
+    return null
+  }
 }
 
 export async function getDashboardTrends() {
-  const response = await apiFetch('/api/dashboard/trends/')
-  if (!response.ok) return []
-  return response.json()
+  try {
+    const response = await apiFetch('/api/dashboard/trends/')
+    return response.json()
+  } catch (err) {
+    console.error('getDashboardTrends error:', err)
+    return []
+  }
 }
 
 export async function getDashboardByCategory() {
-  const response = await apiFetch('/api/dashboard/by-category/')
-  if (!response.ok) return []
-  return response.json()
+  try {
+    const response = await apiFetch('/api/dashboard/by-category/')
+    return response.json()
+  } catch (err) {
+    console.error('getDashboardByCategory error:', err)
+    return []
+  }
 }
 
 export function logout() {

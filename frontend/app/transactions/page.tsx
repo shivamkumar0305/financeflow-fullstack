@@ -59,7 +59,7 @@ export default function TransactionsPage() {
       const selectedCat = backendCategories.find(c => c.value === category)
       const type = selectedCat?.type || 'expense'
       
-      await createTransaction({
+      const response = await createTransaction({
         notes: title,
         amount: parseFloat(amount),
         category,
@@ -67,14 +67,18 @@ export default function TransactionsPage() {
         date
       })
       
-      // Reset form and refresh
-      setTitle('')
-      setAmount('')
-      setShowNewTransactionForm(false)
-      fetchTransactions()
-    } catch (err) {
+      if (response && response.id) {
+        // Reset form and refresh
+        setTitle('')
+        setAmount('')
+        setShowNewTransactionForm(false)
+        await fetchTransactions()
+      } else {
+        throw new Error('Invalid response from server')
+      }
+    } catch (err: any) {
       console.error('Failed to create transaction', err)
-      alert('Failed to create transaction')
+      alert(err.message || 'Failed to create transaction')
     } finally {
       setIsSubmitting(false)
     }

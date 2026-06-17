@@ -28,12 +28,17 @@ export default function AnalyticsPage() {
       setSummary(summaryData)
       
       // Format trends data for recharts
-      const formattedTrends = (trendsData || []).map((t: any) => ({
-        month: new Date(t.month).toLocaleString('default', { month: 'short' }),
-        income: parseFloat(t.income || 0),
-        expenses: parseFloat(t.expenses || 0),
-        savings: parseFloat(t.income || 0) - parseFloat(t.expenses || 0)
-      }))
+      const formattedTrends = (trendsData || []).map((t: any) => {
+        // Safe date parsing: "2023-01-01" -> "Jan"
+        const [year, month, day] = t.month.split('-').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        return {
+          month: dateObj.toLocaleString('default', { month: 'short' }),
+          income: parseFloat(t.income || 0),
+          expenses: parseFloat(t.expenses || 0),
+          savings: parseFloat(t.income || 0) - parseFloat(t.expenses || 0)
+        }
+      })
       setTrends(formattedTrends)
       
       setCategories((categoriesData || []).map((c: any) => ({

@@ -48,7 +48,8 @@ class SummaryView(DashboardBaseView):
 
 class CategoryBreakdownView(DashboardBaseView):
     def get(self, request):
-        qs = self.get_filtered_queryset(request)
+        # Focus on expenses for category breakdown
+        qs = self.get_filtered_queryset(request).filter(transaction_type='expense')
         breakdown = qs.values('category').annotate(
             total=Sum('amount'),
             count=Count('id')
@@ -57,15 +58,20 @@ class CategoryBreakdownView(DashboardBaseView):
 
 class MonthlyTrendsView(DashboardBaseView):
     def get(self, request):
-        # Filter for the current year
-        current_year = timezone.now().year
-        qs = self.get_filtered_queryset(request).filter(date__year=current_year)
+        # Show trends for the last 12 months instead of just the current year
+        twelve_months_ago = timezone.now() - timezone.timedelta(days=365)
+        qs = self.get_filtered_queryset(request).filter(date__gte=twelve_months_ago)
         
         trends = qs.annotate(month=TruncMonth('date')).values('month').annotate(
             income=Sum('amount', filter=Q(transaction_type='income')),
             expenses=Sum('amount', filter=Q(transaction_type='expense'))
         ).order_by('month')
         
+        # Ensure values are floats for JSON serialization if they are Decimals
+        for t in trends:
+            t['income'] = float(t['income'] or 0)
+            t['expenses'] = float(t['expenses'] or 0)
+            
         return Response(trends)
 
 class RecentActivityView(DashboardBaseView):

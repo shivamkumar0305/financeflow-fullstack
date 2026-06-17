@@ -34,12 +34,16 @@ export default function DashboardPage() {
         const recentData = await recentRes.json()
 
         setSummary(summaryData)
-        setTrends((trendsData || []).map((d: any) => ({
-          ...d,
-          month: new Date(d.month).toLocaleString('default', { month: 'short' }),
-          income: parseFloat(d.income || 0),
-          expenses: parseFloat(d.expenses || 0),
-        })))
+        setTrends((trendsData || []).map((d: any) => {
+          const [year, month, day] = d.month.split('-').map(Number);
+          const dateObj = new Date(year, month - 1, day);
+          return {
+            ...d,
+            month: dateObj.toLocaleString('default', { month: 'short' }),
+            income: parseFloat(d.income || 0),
+            expenses: parseFloat(d.expenses || 0),
+          }
+        }))
         setCategories((categoriesData || []).map((c: any) => ({
           name: c.category.charAt(0).toUpperCase() + c.category.slice(1),
           value: parseFloat(c.total || 0),
