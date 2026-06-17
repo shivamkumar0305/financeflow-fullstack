@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-for-assessment'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ["financeflow-fullstack.onrender.com"]
+ALLOWED_HOSTS = ['financeflow-fullstack-1.onrender.com']
 
 # Application definition
 INSTALLED_APPS = [
@@ -50,10 +50,10 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://financeflow-fullstack.vercel.app",
+    "https://financeflow-fullstack-1.onrender.com",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "https://financeflow-fullstack.vercel.app",
+    "https://financeflow-fullstack-1.onrender.com",
 ]
 
 ROOT_URLCONF = 'finance_dashboard.urls'
