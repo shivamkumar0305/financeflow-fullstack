@@ -80,11 +80,11 @@ export default function TransactionsPage() {
     }
   }
 
-  const filteredTransactions = transactions.filter(tx => {
-    const matchesSearch = tx.notes?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTransactions = Array.isArray(transactions) ? transactions.filter(tx => {
+    const matchesSearch = (tx.notes || '').toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === 'All' || tx.category === selectedCategory.toLowerCase()
     return matchesSearch && matchesCategory
-  })
+  }) : []
 
   return (
     <main className="min-h-screen bg-background">

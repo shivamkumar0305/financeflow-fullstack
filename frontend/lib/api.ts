@@ -60,15 +60,34 @@ export async function signup(email: string, password: string, fullName: string) 
 }
 
 export async function getTransactions() {
-  const response = await apiFetch('/api/finance/')
+  const response = await apiFetch('/api/finance/records/')
+  if (!response.ok) return []
   return response.json()
 }
 
 export async function createTransaction(data: any) {
-  const response = await apiFetch('/api/finance/', {
+  const response = await apiFetch('/api/finance/records/', {
     method: 'POST',
     body: JSON.stringify(data),
   })
+  return response.json()
+}
+
+export async function getDashboardSummary() {
+  const response = await apiFetch('/api/dashboard/summary/')
+  if (!response.ok) return null
+  return response.json()
+}
+
+export async function getDashboardTrends() {
+  const response = await apiFetch('/api/dashboard/trends/')
+  if (!response.ok) return []
+  return response.json()
+}
+
+export async function getDashboardByCategory() {
+  const response = await apiFetch('/api/dashboard/by-category/')
+  if (!response.ok) return []
   return response.json()
 }
 

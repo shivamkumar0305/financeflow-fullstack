@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card-modern'
 import { BarChart3, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownRight, Wallet } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { apiFetch } from '@/lib/api'
+import { getDashboardSummary, getDashboardTrends, getDashboardByCategory, apiFetch } from '@/lib/api'
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<any>(null)
@@ -18,36 +18,35 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       setIsLoading(true)
+      setError(null)
       try {
-        const [summaryRes, trendsRes, categoriesRes, recentRes] = await Promise.all([
-          apiFetch('/api/dashboard/summary/'),
-          apiFetch('/api/dashboard/trends/'),
-          apiFetch('/api/dashboard/by-category/'),
+        const [summaryData, trendsData, categoriesData, recentRes] = await Promise.all([
+          getDashboardSummary(),
+          getDashboardTrends(),
+          getDashboardByCategory(),
           apiFetch('/api/dashboard/recent/'),
         ])
 
-        if (!summaryRes.ok || !trendsRes.ok || !categoriesRes.ok || !recentRes.ok) {
-          throw new Error('Failed to fetch dashboard data')
+        if (!recentRes.ok) {
+          throw new Error('Failed to fetch recent activity')
         }
 
-        const summaryData = await summaryRes.json()
-        const trendsData = await trendsRes.json()
-        const categoriesData = await categoriesRes.json()
         const recentData = await recentRes.json()
 
         setSummary(summaryData)
-        setTrends(trendsData.map((d: any) => ({
+        setTrends((trendsData || []).map((d: any) => ({
           ...d,
           month: new Date(d.month).toLocaleString('default', { month: 'short' }),
-          income: d.income || 0,
-          expenses: d.expenses || 0,
+          income: parseFloat(d.income || 0),
+          expenses: parseFloat(d.expenses || 0),
         })))
-        setCategories(categoriesData.map((c: any) => ({
+        setCategories((categoriesData || []).map((c: any) => ({
           name: c.category.charAt(0).toUpperCase() + c.category.slice(1),
-          value: parseFloat(c.total),
+          value: parseFloat(c.total || 0),
         })))
-        setRecent(recentData)
+        setRecent(recentData || [])
       } catch (err) {
+        console.error('Dashboard data fetch error:', err)
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setIsLoading(false)
@@ -83,9 +82,9 @@ export default function DashboardPage() {
   }
 
   const summaryCards = [
-    { label: 'Total Income', value: summary?.total_income, icon: ArrowUpRight, color: 'text-success', bg: 'bg-success/10' },
-    { label: 'Total Expenses', value: summary?.total_expenses, icon: ArrowDownRight, color: 'text-danger', bg: 'bg-danger/10' },
-    { label: 'Net Balance', value: summary?.net_balance, icon: Wallet, color: 'text-primary', bg: 'bg-primary/10' },
+    { label: 'Total Income', value: summary?.total_income || 0, icon: ArrowUpRight, color: 'text-success', bg: 'bg-success/10' },
+    { label: 'Total Expenses', value: summary?.total_expenses || 0, icon: ArrowDownRight, color: 'text-danger', bg: 'bg-danger/10' },
+    { label: 'Net Balance', value: summary?.net_balance || 0, icon: Wallet, color: 'text-primary', bg: 'bg-primary/10' },
   ]
 
   const COLORS = ['#CBAE82', '#D4BFA0', '#DDD0C0', '#E8E0D8', '#F0EAE0']
@@ -112,7 +111,7 @@ export default function DashboardPage() {
                     <div>
                       <p className="text-[10px] uppercase tracking-widest font-extrabold text-foreground/40 mb-1">{item.label}</p>
                       <p className="text-2xl font-bold text-foreground tracking-tight">
-                        ${item.value?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${(item.value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div className={`w-10 h-10 ${item.bg} rounded-xl flex items-center justify-center`}>
@@ -133,28 +132,36 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground/60">Monthly Trends</CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-2">
-              <ResponsiveContainer width="100%" height={260}>
-                <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#CBAE82" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#CBAE82" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#9CA3AF' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#9CA3AF' }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                  />
-                  <Area type="monotone" dataKey="income" stroke="#CBAE82" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" name="Income" />
-                  <Area type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" name="Expenses" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="h-[260px] w-full">
+                {trends.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#CBAE82" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#CBAE82" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#EF4444" stopOpacity={0.1}/>
+                          <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#9CA3AF' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#9CA3AF' }} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                      />
+                      <Area type="monotone" dataKey="income" stroke="#CBAE82" strokeWidth={2} fillOpacity={1} fill="url(#colorIncome)" name="Income" />
+                      <Area type="monotone" dataKey="expenses" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorExpense)" name="Expenses" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-foreground/40 text-xs">
+                    No activity recorded yet
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -164,27 +171,35 @@ export default function DashboardPage() {
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-foreground/60">Distribution</CardTitle>
             </CardHeader>
             <CardContent className="p-5 pt-0 flex justify-center">
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={categories}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    paddingAngle={4}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {categories.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="outline-none" />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="h-[260px] w-full">
+                {categories.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={categories}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={4}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {categories.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="outline-none" />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-foreground/40 text-xs text-center p-4">
+                    Categorized expenses will appear here
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -196,7 +211,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="p-5 pt-4">
             <div className="space-y-1">
-              {recent.map((transaction) => (
+              {recent.length > 0 ? recent.map((transaction) => (
                 <div key={transaction.id} className="flex items-center justify-between py-2.5 px-3 hover:bg-secondary/30 rounded-lg transition-colors group">
                   <div className="flex-1">
                     <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">{transaction.notes || 'No notes'}</p>
@@ -209,7 +224,9 @@ export default function DashboardPage() {
                     <p className="text-[10px] text-foreground/40 font-medium">{transaction.date}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-center py-10 text-xs text-foreground/40">No transactions found</p>
+              )}
             </div>
           </CardContent>
         </Card>
