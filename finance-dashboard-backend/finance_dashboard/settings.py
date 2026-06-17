@@ -15,7 +15,10 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-for-assessment'
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['financeflow-fullstack-1.onrender.com']
+ALLOWED_HOSTS = ['financeflow-fullstack-1.onrender.com', '.onrender.com', 'localhost', '127.0.0.1']
+
+# Add this for Render (ensures Django knows it's an HTTPS request behind the proxy)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Application definition
 INSTALLED_APPS = [
@@ -52,6 +55,7 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "https://financeflow-fullstack.vercel.app",
 ]
+
 CSRF_TRUSTED_ORIGINS = [
     "https://financeflow-fullstack.vercel.app",
 ]
