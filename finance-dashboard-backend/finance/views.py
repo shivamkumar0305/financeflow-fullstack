@@ -14,15 +14,18 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Always exclude soft-deleted records
-        return FinancialRecord.objects.filter(is_deleted=False)
+        queryset = FinancialRecord.objects.filter(is_deleted=False)
+        if self.request.user.is_authenticated:
+            # Regular users only see their own records
+            if self.request.user.role not in ['admin', 'analyst']:
+                queryset = queryset.filter(created_by=self.request.user)
+        return queryset
 
     def get_serializer_class(self):
         return FinancialRecordSerializer
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [IsActiveUser()]
-        return [IsAnalystOrAdmin()]
+        return [IsActiveUser()]
 
     def perform_create(self, serializer):
         # Automatically set the creator from the request user

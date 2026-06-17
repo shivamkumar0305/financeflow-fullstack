@@ -43,6 +43,35 @@ export async function login(email: string, password: string) {
   }
 }
 
+export async function signup(email: string, password: string, fullName: string) {
+  const response = await fetch(`${API_URL}/api/users/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, full_name: fullName }),
+  })
+
+  const data = await response.json()
+
+  if (response.ok) {
+    return { success: true, data }
+  } else {
+    return { success: false, error: data.email?.[0] || data.detail || 'Signup failed' }
+  }
+}
+
+export async function getTransactions() {
+  const response = await apiFetch('/api/finance/')
+  return response.json()
+}
+
+export async function createTransaction(data: any) {
+  const response = await apiFetch('/api/finance/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  return response.json()
+}
+
 export function logout() {
   localStorage.removeItem('access_token')
   localStorage.removeItem('refresh_token')

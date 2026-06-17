@@ -2,32 +2,87 @@
 
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card-modern'
-import { ArrowUpRight, ArrowDownLeft, Search, Plus, Filter } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowUpRight, ArrowDownLeft, Search, Plus, Filter, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { getTransactions, createTransaction } from '@/lib/api'
 
-const allTransactions = [
-  { id: 1, title: 'Whole Foods Market', amount: -127.50, date: '2025-06-15', category: 'Food', type: 'expense' },
-  { id: 2, title: 'Freelance Project Payment', amount: 1200.00, date: '2025-06-14', category: 'Income', type: 'income' },
-  { id: 3, title: 'Electric Bill', amount: -89.00, date: '2025-06-13', category: 'Utilities', type: 'expense' },
-  { id: 4, title: 'Restaurant (Dinner)', amount: -45.30, date: '2025-06-12', category: 'Food', type: 'expense' },
-  { id: 5, title: 'Shell Gas Station', amount: -52.00, date: '2025-06-11', category: 'Transport', type: 'expense' },
-  { id: 6, title: 'Monthly Salary', amount: 5000.00, date: '2025-06-10', category: 'Income', type: 'income' },
-  { id: 7, title: 'Netflix Subscription', amount: -15.99, date: '2025-06-09', category: 'Entertainment', type: 'expense' },
-  { id: 8, title: 'Coffee Shop', amount: -8.50, date: '2025-06-08', category: 'Food', type: 'expense' },
-  { id: 9, title: 'Amazon Purchase', amount: -234.56, date: '2025-06-07', category: 'Shopping', type: 'expense' },
-  { id: 10, title: 'Gym Membership', amount: -49.99, date: '2025-06-06', category: 'Health', type: 'expense' },
+const backendCategories = [
+  { value: 'salary', label: 'Salary', type: 'income' },
+  { value: 'freelance', label: 'Freelance', type: 'income' },
+  { value: 'investment', label: 'Investment', type: 'income' },
+  { value: 'food', label: 'Food', type: 'expense' },
+  { value: 'transport', label: 'Transport', type: 'expense' },
+  { value: 'utilities', label: 'Utilities', type: 'expense' },
+  { value: 'entertainment', label: 'Entertainment', type: 'expense' },
+  { value: 'healthcare', label: 'Healthcare', type: 'expense' },
+  { value: 'education', label: 'Education', type: 'expense' },
+  { value: 'other', label: 'Other', type: 'expense' },
 ]
 
-const categories = ['All', 'Food', 'Transport', 'Utilities', 'Entertainment', 'Shopping', 'Health', 'Income']
-
 export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [showNewTransactionForm, setShowNewTransactionForm] = useState(false)
 
-  const filteredTransactions = allTransactions.filter(tx => {
-    const matchesSearch = tx.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === 'All' || tx.category === selectedCategory
+  // Form state
+  const [title, setTitle] = useState('')
+  const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState('food')
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  const fetchTransactions = async () => {
+    try {
+      const data = await getTransactions()
+      setTransactions(data)
+    } catch (err) {
+      console.error('Failed to fetch transactions', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAddTransaction = async () => {
+    if (!title || !amount || !category || !date) {
+      alert('Please fill all fields')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const selectedCat = backendCategories.find(c => c.value === category)
+      const type = selectedCat?.type || 'expense'
+      
+      await createTransaction({
+        notes: title,
+        amount: parseFloat(amount),
+        category,
+        transaction_type: type,
+        date
+      })
+      
+      // Reset form and refresh
+      setTitle('')
+      setAmount('')
+      setShowNewTransactionForm(false)
+      fetchTransactions()
+    } catch (err) {
+      console.error('Failed to create transaction', err)
+      alert('Failed to create transaction')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const filteredTransactions = transactions.filter(tx => {
+    const matchesSearch = tx.notes?.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = selectedCategory === 'All' || tx.category === selectedCategory.toLowerCase()
     return matchesSearch && matchesCategory
   })
 
@@ -61,6 +116,8 @@ export default function TransactionsPage() {
                     <label className="block text-sm font-medium text-foreground mb-2">Title</label>
                     <input
                       type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
                       placeholder="Transaction title"
                       className="w-full px-4 py-2 bg-secondary border border-border rounded-xl text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
@@ -69,6 +126,8 @@ export default function TransactionsPage() {
                     <label className="block text-sm font-medium text-foreground mb-2">Amount</label>
                     <input
                       type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
                       className="w-full px-4 py-2 bg-secondary border border-border rounded-xl text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
@@ -77,9 +136,13 @@ export default function TransactionsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Category</label>
-                    <select className="w-full px-4 py-2 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      {categories.filter(c => c !== 'All').map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                    <select 
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full px-4 py-2 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      {backendCategories.map(cat => (
+                        <option key={cat.value} value={cat.value}>{cat.label}</option>
                       ))}
                     </select>
                   </div>
@@ -87,12 +150,19 @@ export default function TransactionsPage() {
                     <label className="block text-sm font-medium text-foreground mb-2">Date</label>
                     <input
                       type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
                       className="w-full px-4 py-2 bg-secondary border border-border rounded-xl text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                 </div>
                 <div className="flex gap-3 pt-4">
-                  <button className="flex-1 py-2 bg-primary text-surface rounded-full font-semibold hover:bg-primary/90 transition-all">
+                  <button 
+                    onClick={handleAddTransaction}
+                    disabled={isSubmitting}
+                    className="flex-1 py-2 bg-primary text-surface rounded-full font-semibold hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                     Add Transaction
                   </button>
                   <button
@@ -125,17 +195,17 @@ export default function TransactionsPage() {
 
               {/* Category Filter */}
               <div className="flex flex-wrap gap-2">
-                {categories.map(category => (
+                {['All', ...backendCategories.map(c => c.label)].map(catLabel => (
                   <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
+                    key={catLabel}
+                    onClick={() => setSelectedCategory(catLabel)}
                     className={`px-4 py-2 rounded-full font-medium transition-all ${
-                      selectedCategory === category
+                      selectedCategory === catLabel
                         ? 'bg-primary text-surface'
                         : 'bg-secondary text-foreground hover:bg-secondary/70'
                     }`}
                   >
-                    {category}
+                    {catLabel}
                   </button>
                 ))}
               </div>
@@ -150,7 +220,12 @@ export default function TransactionsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-0">
-              {filteredTransactions.length > 0 ? (
+              {isLoading ? (
+                <div className="py-12 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-4" />
+                  <p className="text-foreground/60">Loading transactions...</p>
+                </div>
+              ) : filteredTransactions.length > 0 ? (
                 filteredTransactions.map((transaction, index) => (
                   <div
                     key={transaction.id}
@@ -160,28 +235,28 @@ export default function TransactionsPage() {
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                        transaction.type === 'income'
+                        transaction.transaction_type === 'income'
                           ? 'bg-success/10'
                           : 'bg-danger/10'
                       }`}>
-                        {transaction.type === 'income' ? (
+                        {transaction.transaction_type === 'income' ? (
                           <ArrowDownLeft className="w-6 h-6 text-success" />
                         ) : (
                           <ArrowUpRight className="w-6 h-6 text-danger" />
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">{transaction.title}</p>
-                        <p className="text-sm text-foreground/60">{transaction.category}</p>
+                        <p className="font-medium text-foreground">{transaction.notes || 'Untitled'}</p>
+                        <p className="text-sm text-foreground/60 capitalize">{transaction.category}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className={`font-semibold ${
-                        transaction.type === 'income'
+                        transaction.transaction_type === 'income'
                           ? 'text-success'
                           : 'text-danger'
                       }`}>
-                        {transaction.type === 'income' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
+                        {transaction.transaction_type === 'income' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
                       </p>
                       <p className="text-sm text-foreground/60">{transaction.date}</p>
                     </div>

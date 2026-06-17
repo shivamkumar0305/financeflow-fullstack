@@ -1,18 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card-modern'
-import { ArrowLeft, UserCircle2 } from 'lucide-react'
+import { ArrowLeft, UserCircle2, CheckCircle2 } from 'lucide-react'
 import { login } from '@/lib/api'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('signup') === 'success') {
+      setSuccess('Account created successfully! Please sign in.')
+    }
+  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,6 +82,13 @@ export default function LoginPage() {
             {error && (
               <div className="mb-6 p-3 bg-danger/5 border border-danger/10 rounded-xl text-danger text-[10px] font-bold text-center uppercase tracking-wide">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-6 p-3 bg-success/5 border border-success/10 rounded-xl text-success text-[10px] font-bold text-center uppercase tracking-wide flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-3 h-3" />
+                {success}
               </div>
             )}
 

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import User
@@ -15,6 +15,8 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
         if self.action in ['me', 'change_password']:
             return [IsActiveUser()]
         return [IsAdmin()]

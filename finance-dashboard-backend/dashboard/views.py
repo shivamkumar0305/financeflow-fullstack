@@ -11,8 +11,13 @@ class DashboardBaseView(APIView):
     permission_classes = [IsActiveUser]
 
     def get_filtered_queryset(self, request):
-        """Helper to apply date filters to the records."""
+        """Helper to apply user and date filters to the records."""
         queryset = FinancialRecord.objects.filter(is_deleted=False)
+        
+        # Regular users only see their own records
+        if request.user.role not in ['admin', 'analyst']:
+            queryset = queryset.filter(created_by=request.user)
+            
         date_after = request.query_params.get('date_after')
         date_before = request.query_params.get('date_before')
 
@@ -66,6 +71,6 @@ class MonthlyTrendsView(DashboardBaseView):
 class RecentActivityView(DashboardBaseView):
     def get(self, request):
         # Return last 10 records using the existing finance serializer
-        qs = FinancialRecord.objects.filter(is_deleted=False).order_by('-created_at')[:10]
+        qs = self.get_filtered_queryset(request).order_by('-created_at')[:10]
         serializer = FinancialRecordSerializer(qs, many=True)
         return Response(serializer.data)

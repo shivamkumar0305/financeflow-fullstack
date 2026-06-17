@@ -4,22 +4,41 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card-modern'
 import { ArrowLeft, Check } from 'lucide-react'
+import { signup } from '@/lib/api'
+import { useRouter } from 'next/navigation'
 
 export default function SignupPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
+  const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
+    
     if (password !== confirmPassword) {
-      alert('Passwords do not match')
+      setError('Passwords do not match')
       return
     }
+
     setIsLoading(true)
-    // API call will be added here
-    setTimeout(() => setIsLoading(false), 1000)
+    
+    try {
+      const result = await signup(email, password, fullName)
+      if (result.success) {
+        router.push('/login?signup=success')
+      } else {
+        setError(result.error || 'Signup failed')
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -40,7 +59,25 @@ export default function SignupPage() {
               <p className="text-foreground/60">Sign up to start using FinanceFlow</p>
             </div>
 
+            {error && (
+              <div className="mb-6 p-4 bg-danger/10 border border-danger/20 text-danger text-sm rounded-2xl">
+                {error}
+              </div>
+            )}
+
             <form onSubmit={handleSignup} className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-foreground">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  className="w-full px-4 py-3 bg-secondary border border-border rounded-2xl text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-foreground">Email</label>
                 <input
