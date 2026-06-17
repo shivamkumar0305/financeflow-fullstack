@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-for-assessment'
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["financeflow-fullstack.onrender.com"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -49,7 +49,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True # For development simplicity
+CORS_ALLOWED_ORIGINS = [
+    "https://financeflow-fullstack.vercel.app",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://financeflow-fullstack.vercel.app",
+]
 
 ROOT_URLCONF = 'finance_dashboard.urls'
 
