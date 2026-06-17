@@ -50,10 +50,10 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://financeflow-fullstack-1.onrender.com",
+    "https://financeflow-fullstack.vercel.app",
 ]
 CSRF_TRUSTED_ORIGINS = [
-    "https://financeflow-fullstack-1.onrender.com",
+    "https://financeflow-fullstack.vercel.app",
 ]
 
 ROOT_URLCONF = 'finance_dashboard.urls'
