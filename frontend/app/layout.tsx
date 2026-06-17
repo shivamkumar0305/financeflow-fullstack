@@ -12,7 +12,6 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: 'FinanceFlow',
   description: 'Modern financial intelligence platform',
-  generator: 'v0.app',
   icons: {
     icon: '/icon.svg',
     apple: '/apple-icon.png',
