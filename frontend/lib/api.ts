@@ -73,7 +73,12 @@ export async function signup(email: string, password: string, fullName: string) 
 export async function getTransactions() {
   try {
     const response = await apiFetch('/api/finance/records/')
-    return response.json()
+    const data = await response.json()
+    // Handle DRF pagination
+    if (data && data.results && Array.isArray(data.results)) {
+      return data.results
+    }
+    return Array.isArray(data) ? data : []
   } catch (err) {
     console.error('getTransactions error:', err)
     return []
@@ -115,6 +120,16 @@ export async function getDashboardByCategory() {
   } catch (err) {
     console.error('getDashboardByCategory error:', err)
     return []
+  }
+}
+
+export async function getProfile() {
+  try {
+    const response = await apiFetch('/api/users/me/')
+    return response.json()
+  } catch (err) {
+    console.error('getProfile error:', err)
+    return null
   }
 }
 

@@ -2,21 +2,63 @@
 
 import { Header } from '@/components/layout/header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card-modern'
-import { User, Mail, Phone, MapPin, Calendar, Edit2, Save } from 'lucide-react'
-import { useState } from 'react'
+import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { getProfile } from '@/lib/api'
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    joinDate: 'January 15, 2024',
+    name: '',
+    email: '',
+    phone: 'Not provided',
+    location: 'Not provided',
+    joinDate: '',
+    role: ''
   })
+
+  useEffect(() => {
+    fetchProfile()
+  }, [])
+
+  const fetchProfile = async () => {
+    try {
+      const data = await getProfile()
+      if (data) {
+        setProfile({
+          name: data.full_name || '',
+          email: data.email || '',
+          phone: 'Not provided',
+          location: 'Not provided',
+          joinDate: data.date_joined ? new Date(data.date_joined).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }) : '',
+          role: data.role || ''
+        })
+      }
+    } catch (err) {
+      console.error('Failed to fetch profile', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSave = () => {
     setIsEditing(false)
+  }
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -103,7 +145,7 @@ export default function ProfilePage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h2 className="text-3xl font-display font-bold text-foreground mb-1">{profile.name}</h2>
-                      <p className="text-foreground/60">{profile.email}</p>
+                      <p className="text-foreground/60">{profile.email} • <span className="capitalize">{profile.role}</span></p>
                     </div>
                     <button
                       onClick={() => setIsEditing(true)}
