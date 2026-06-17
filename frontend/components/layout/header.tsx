@@ -28,9 +28,6 @@ export function Header() {
       <nav className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
-            <span className="text-surface font-black text-[10px]">FF</span>
-          </div>
           <span className="font-bold text-sm tracking-tight text-foreground">FinanceFlow</span>
         </Link>
 
