@@ -1,0 +1,16 @@
+# Environments
+venv/
+env/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database (Submit the code, not your local data)
+db.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
